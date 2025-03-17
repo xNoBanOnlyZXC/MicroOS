@@ -48,7 +48,9 @@ const helpCommand commands[] = {
     {"settings", "Change/look device settings"}, // settings <set/get/list/keys> <key> [value]
     {"pin", "Control any pin from terminal"}, // pin <num> mode/set [analog] <mode:[OUTPUT/INPUT/PULLUP/PULLDN]> <set:[digital:low/high/0/1 analog:0-255]>
     {"mx", "Small mx file editor"},
-    {"neofetch", "System information"}
+    {"neofetch", "System information"},
+    {"ls", "List files in current directory"},
+    {"cd", "Change directory"}
 };
 
 struct Command {
@@ -71,3 +73,5 @@ void writeUser();
 void getTerminal();
 void pinWorker(const String& command);
 String progressBar(int used, int total, int width);
+void listFiles(const String& command);
+void changeDir(const String& command);

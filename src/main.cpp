@@ -13,32 +13,34 @@ String currentPath = "/";
 int currentDisk = 0; // 0 - LittleFS, 1 - SD card
 
 Command commandList[] = {
-    {"help", [](String) { helpFunc(); }},
-    {"mount", [](String cmd) { mount(cmd); }},
-    {"unmount", [](String) { unmount(); }},
-    {"settings", [](String cmd) { processSettingsCommand(cmd); }},
-    {"neofetch", [](String) { neofetch(); }},
-    {"tcheck", [](String) { getTerminal(); }},
-    {"reboot", [](String) {
-      Serial.println("Restarting ESP...");
-      delay(200);
-      for (int pin = 0; pin < 40; pin++) {
-        pinMode(pin, INPUT);
+  {"help", [](String) { helpFunc(); }},
+  {"mount", [](String cmd) { mount(cmd); }},
+  {"unmount", [](String) { unmount(); }},
+  {"settings", [](String cmd) { processSettingsCommand(cmd); }},
+  {"neofetch", [](String) { neofetch(); }},
+  {"tcheck", [](String) { getTerminal(); }},
+  {"reboot", [](String) {
+    Serial.println("Restarting ESP...");
+    delay(200);
+    for (int pin = 0; pin < 40; pin++) {
+    pinMode(pin, INPUT);
     }
-      ESP.restart();
-    }},
-    {"pin", [](String cmd) { pinWorker(cmd); }},
-    {"mx", [](String cmd) {
-      int spaceIndex = cmd.indexOf(' ');
-      if (spaceIndex != -1) {
-          String filePath = cmd.substring(spaceIndex + 1);
-          editor.begin(filePath);
-          editor.run();
-      } else {
-          Serial.println("No file path provided");
-      }
-    }}
-  };
+    ESP.restart();
+  }},
+  {"pin", [](String cmd) { pinWorker(cmd); }},
+  {"mx", [](String cmd) {
+    int spaceIndex = cmd.indexOf(' ');
+    if (spaceIndex != -1) {
+      String filePath = cmd.substring(spaceIndex + 1);
+      editor.begin(filePath);
+      editor.run();
+    } else {
+      Serial.println("No file path provided");
+    }
+  }},
+  {"ls", [](String cmd) { listFiles(cmd);}},
+  {"cd", [](String cmd) { changeDir(cmd);}}
+};
 
 void setup() {
   String ver = "0.02.27";
