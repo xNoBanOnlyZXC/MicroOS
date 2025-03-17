@@ -485,7 +485,7 @@ void changeDir(const String& command) {
         // esp_log_set_vprintf(oldPrint);
         Serial.println("\rError: Not a directory");
     } else {
-        // esp_log_set_vprintf(oldPrint);
+        // esp_log_set_vprintf(oldPrint); 
         currentPath = tempPath;
         Serial.println("\rChanged directory to: " + tempPath);
     }

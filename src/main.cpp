@@ -39,7 +39,7 @@ Command commandList[] = {
     }
   }},
   {"ls", [](String cmd) { listFiles(cmd);}},
-  {"cd", [](String cmd) { changeDir(cmd);}}
+  {"cd", [](String cmd) { changeDir(cmd);}} 
 };
 
 void setup() {

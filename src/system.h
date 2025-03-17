@@ -50,7 +50,7 @@ const helpCommand commands[] = {
     {"mx", "Small mx file editor"},
     {"neofetch", "System information"},
     {"ls", "List files in current directory"},
-    {"cd", "Change directory"}
+    {"cd", "Change directory"} 
 };
 
 struct Command {
