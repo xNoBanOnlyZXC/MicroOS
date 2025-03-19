@@ -57,7 +57,8 @@ Command commandList[] = {
     String text = cmd.substring(4);
     text.trim();
     Serial.println(text);
-  }}
+  }},
+  {"mkdir", [](String cmd) { makeDir(cmd); }}
 };
 
 void setup() {

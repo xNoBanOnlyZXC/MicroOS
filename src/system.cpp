@@ -293,6 +293,62 @@ void getTerminal() {
     }
 }
 
+String relativePath(String& path) {
+    if (!path.startsWith("/")) {
+        if (path.startsWith("./")) {
+            path = currentPath + path.substring(2);
+        } else if (path == "..") {
+            int lastSlash = currentPath.lastIndexOf('/');
+            if (lastSlash != -1) {
+                path = currentPath.substring(0, lastSlash);
+                if (path.isEmpty()) {
+                    path = "/";
+                }
+            } else {
+                path = "/";
+            }
+        } else if (path.startsWith("..")) {
+            path = path.substring(2);
+            if (path.startsWith("/")) {
+                path = path.substring(1);
+            }
+            int lastSlash = currentPath.lastIndexOf('/');
+            if (lastSlash != -1) {
+                if (!path.isEmpty()) {
+                    path = currentPath.substring(0, lastSlash) + "/" + path;
+                } else {
+                    path = currentPath.substring(0, lastSlash);
+                    if (path.isEmpty()) {
+                        path = "/";
+                    }
+                }
+            } else {
+                if (!path.isEmpty()) {
+                    path = "/";
+                } else {
+                    path = "/" + path;
+                }
+            }
+        } else if (path.startsWith(".")) {
+            path = path.substring(1);
+            if (path.startsWith("/")) {
+                path = path.substring(1);
+                if (path.isEmpty()) {
+                    path = currentPath;
+                }
+            }
+        } else {
+            if (!path.endsWith("/")) {
+                path += "/";
+            }
+            path = currentPath + path;
+        }
+    }
+    path.replace("//", "/");
+    path.trim();
+    return path;
+}
+
 void pinWorker(const String& command) {
     // pin <num> mode/set [analog] <mode:[OUTPUT/INPUT/PULLUP/PULLDN]> <set:[digital:low/high/0/1 analog:0-255]>
     // ex: pin 20 mode output
@@ -412,19 +468,13 @@ void listFiles(const String& command) {
         }
     }
 
-    if (!path.startsWith("/")) {
-        if (path.startsWith("./")) {
-            path = currentPath + path.substring(2);
-        } else {
-            path = currentPath + path;
-        }
-    }
+    path = relativePath(path);
 
-    Serial.printf("Listing directory: %s\n", path.c_str());
+    Serial.printf("\rListing directory: %s\n", path.c_str());
 
     File root = LittleFS.open(path);
     if (!root || !root.isDirectory()) {
-        Serial.println("Failed to open directory");
+        Serial.println("\rFailed to open directory");
         return;
     }
     File file = root.openNextFile();
@@ -452,31 +502,15 @@ void changeDir(const String& command) {
         return;
     }
 
-    if (path == "..") {
-        int lastSlash = tempPath.lastIndexOf('/');
-        if (lastSlash != -1) {
-            tempPath = tempPath.substring(0, lastSlash);
-        }
-        if (tempPath.isEmpty()) {
-            tempPath = "/";
-        }
-    } else if (path.startsWith("/")) {
-        tempPath = path;
-    } else {
-        if (!tempPath.endsWith("/")) {
-            tempPath += "/";
-        }
-        tempPath += path;
-    }
-
-    tempPath.replace("//", "/");
+    tempPath = relativePath(path);
+    
     if (!LittleFS.exists(tempPath)) {
         Serial.println("\rError: Directory does not exist");
     } else if (!LittleFS.open(tempPath).isDirectory()) {
         Serial.println("\rError: Not a directory");
     } else {
         currentPath = tempPath;
-        Serial.println("\rChanged directory to: " + tempPath);
+        // Serial.println("\rChanged directory to: " + tempPath);
     }
 }
 
@@ -488,14 +522,7 @@ void touchFile(const String& command) {
         return;
     }
 
-    if (path.startsWith("/")) {
-        path = "/" + path;
-    } else if (path.startsWith("./")) {
-        path = currentPath + path;
-    } else {
-        path = currentPath + "/" + path;
-    }
-    path.replace("//", "/");
+    path = relativePath(path);
 
     File file = LittleFS.open(path, "w");
     if (!file) {
@@ -519,7 +546,7 @@ void logPin(const String& command) {
     }
 
     if (args.isEmpty()) {
-        Serial.println("No pin number provided. Use 'log [-a] <pin>' to log state of pin");
+        Serial.println("\rNo pin number provided. Use 'log [-a] <pin>' to log state of pin");
         return;
     }
 
@@ -577,14 +604,8 @@ void removeFile(const String& command) {
         return;
     }
 
-    if (path.startsWith("/")) {
-        path = path;
-    } else if (path.startsWith("./")) {
-        path = currentPath + path;
-    } else {
-        path = currentPath + "/" + path;
-    }
-    path.replace("//", "/");
+    path = relativePath(path);
+
     if (!LittleFS.exists(path)) {
         Serial.println("\rFile does not exist");
     } else if (LittleFS.open(path).isDirectory()) {
@@ -626,14 +647,8 @@ void moveFile(const String& command) {
         return;
     }
 
-    if (!srcPath.startsWith("/")) {
-        srcPath = currentPath + "/" + srcPath;
-    }
-    if (!destPath.startsWith("/")) {
-        destPath = currentPath + "/" + destPath;
-    }
-    srcPath.replace("//", "/");
-    destPath.replace("//", "/");
+    srcPath = relativePath(srcPath);
+    destPath = relativePath(destPath);
 
     if (!LittleFS.exists(srcPath)) {
         Serial.println("\rSource file does not exist");
@@ -655,19 +670,15 @@ void moveFile(const String& command) {
 void catFile(const String& command) {
     String path = command.substring(3);
     path.trim();
-    // 666 stroka
     if (path.isEmpty()) {
         Serial.println("\rNo file path provided. Use 'cat <filename>' to display file content");
         return;
     }
-    if (path.startsWith("/")) {
-        path = path;
-    } else if (path.startsWith("./")) {
-        path = currentPath + path;
-    } else {
-        path = currentPath + "/" + path;
+    
+    path = relativePath(path);
+    if (path.endsWith("/")) {
+        path.remove(path.length() - 1);
     }
-    path.replace("//", "/");
 
     File file = LittleFS.open(path,"r");
     if (!file) {
@@ -689,3 +700,24 @@ void catFile(const String& command) {
     }
 }
 
+void makeDir(const String& command) {
+    String path = command.substring(2);
+    path.trim();
+    if (path.isEmpty()) {
+        Serial.println("\rNo directory path provided. Use 'mkdir <dirname>' to create directory");
+        return;
+    }
+
+    path = relativePath(path);
+
+    if (LittleFS.exists(path)) {
+        Serial.println("\rDirectory already exists");
+        return;
+    }
+
+    if (LittleFS.mkdir(path)) {
+        Serial.println("\rDirectory created: " + path);
+    } else {
+        Serial.println("\rFailed to create directory");
+    }
+}

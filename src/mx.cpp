@@ -65,7 +65,7 @@ void TextEditor::displayContent() {
         lines[index++] = fileContent.substring(start);
     }
     while (index < terminalRows) {
-        lines[index++] = "-";
+        lines[index++] = " ";
     }
     for (int i = 0; i < terminalRows; i++) {
         if (i < terminalRows - 1) {
@@ -87,25 +87,28 @@ void TextEditor::processInput(char input) {
         isModified = true;
     } else if (input == 127 || input == 8) {
         if (cursorCol > 0) {
-            fileContent.remove(fileContent.lastIndexOf('\n', cursorRow * terminalCols + cursorCol - 1) + cursorCol - 1, 1);
-            cursorCol--;
-            isModified = true;
+            int lastNewline = fileContent.lastIndexOf('\n', cursorRow * terminalCols + cursorCol - 1);
+            if (lastNewline != -1) {
+                fileContent.remove(lastNewline + cursorCol - 1, 1);
+                cursorCol--;
+                isModified = true;
+            }
         }
-    } else if (input == 19) {
+    } else if (input == 19) { // Ctrl+S
         saveFile();
-    } else if (input == 24) {
+    } else if (input == 24) { // Ctrl+X
         loadFile();
         cursorRow = 0;
         cursorCol = 0;
         isModified = false;
-    } else if (input == 3) {
+    } else if (input == 3) { // Ctrl+C
         if (isModified) {
             Serial.printf("\033[%d;%dH", terminalRows, 1);
             Serial.print("Unsaved changes! Use Ctrl+S or Ctrl+X first.");
             return;
         }
         shouldExit = true;
-    } else if (input == 27) {
+    } else if (input == 27) { // Escape sequences for arrow keys
         while (Serial.available() < 2);
         char seq1 = Serial.read();
         char seq2 = Serial.read();
@@ -145,7 +148,7 @@ void TextEditor::restoreTerminalState() {
 
 void TextEditor::getTerminalSize() {
     Serial.write("\033[18t");
-    delay(100);
+    delay(200); // Увеличиваем задержку для получения полного ответа
     String response = "";
     while (Serial.available()) {
         char c = Serial.read();
@@ -172,7 +175,7 @@ void TextEditor::ensureLineExists(int row) {
     }
     if (start < fileContent.length()) currentLines++;
     while (currentLines <= row) {
-        fileContent += repeatChar('-', terminalCols) + '\n';
+        fileContent += repeatChar(' ', terminalCols) + '\n';
         currentLines++;
     }
 }

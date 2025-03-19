@@ -55,7 +55,11 @@ const helpCommand commands[] = {
     {"log", "Log pin state"},
     {"rm", "Remove file"},
     {"reboot", "Reboot ESP32"},
-    {"tcheck", "Check terminal size"}
+    {"tcheck", "Check terminal size"},
+    {"mv", "Move file"},
+    {"cat", "Show file content"},
+    {"echo", "Print text to terminal"},
+    {"mkdir", "Create new directory"}
 };
 
 struct Command {
@@ -85,3 +89,4 @@ void logPin(const String& command);
 void removeFile(const String& command);
 void moveFile(const String& command);
 void catFile(const String& command);
+void makeDir(const String& command);
