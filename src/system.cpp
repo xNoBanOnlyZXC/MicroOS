@@ -605,6 +605,9 @@ void removeFile(const String& command) {
     }
 
     path = relativePath(path);
+    if (path.endsWith("/")) {
+        path.remove(path.length() - 1);
+    }
 
     if (!LittleFS.exists(path)) {
         Serial.println("\rFile does not exist");
@@ -612,8 +615,11 @@ void removeFile(const String& command) {
         if (!recursive) {
             Serial.println("\rError: File is a directory. Use -r to remove directory.");
         } else {
-            LittleFS.remove(path);
-            Serial.println("\rDirectory removed: " + path);
+            if (LittleFS.rmdir(path)) {
+                Serial.println("\rDirectory removed: " + path);
+            } else {
+                Serial.println("\rError while removing directory");
+            }
         }
     } else {
         LittleFS.remove(path);
@@ -701,7 +707,7 @@ void catFile(const String& command) {
 }
 
 void makeDir(const String& command) {
-    String path = command.substring(2);
+    String path = command.substring(5);
     path.trim();
     if (path.isEmpty()) {
         Serial.println("\rNo directory path provided. Use 'mkdir <dirname>' to create directory");
@@ -709,6 +715,9 @@ void makeDir(const String& command) {
     }
 
     path = relativePath(path);
+    if (path.endsWith("/")) {
+        path.remove(path.length() - 1);
+    }
 
     if (LittleFS.exists(path)) {
         Serial.println("\rDirectory already exists");
