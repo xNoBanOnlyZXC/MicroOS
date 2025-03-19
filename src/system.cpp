@@ -566,17 +566,11 @@ void removeFile(const String& command) {
     path.trim();
 
     bool recursive = false;
-    bool force = false;
     if (path.startsWith("-r")) {
         recursive = true;
         path = path.substring(2);
         path.trim();
     } 
-    if (path.startsWith("-f")) {
-        force = true;
-        path = path.substring(2);
-        path.trim();
-    }
 
     if (path.isEmpty()) {
         Serial.println("\rNo file path provided. Use rm <filename> to remove file");
@@ -594,8 +588,8 @@ void removeFile(const String& command) {
     if (!LittleFS.exists(path)) {
         Serial.println("\rFile does not exist");
     } else if (LittleFS.open(path).isDirectory()) {
-        if (!recursive && !force) {
-            Serial.println("\rError: File is a directory. Use -rf to remove directory.");
+        if (!recursive) {
+            Serial.println("\rError: File is a directory. Use -r to remove directory.");
         } else {
             LittleFS.remove(path);
             Serial.println("\rDirectory removed: " + path);
