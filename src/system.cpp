@@ -59,10 +59,6 @@ String progressBar(int used, int total, int width = 10) {
 
     return bar + " " + String(percentage) + "%";
 }
-int emptyPrint(const char * format, va_list args) {
-    // Do nothing
-    return 0;
-}
 void helpFunc() {
     printf("List of known commands:\r\n");
     
@@ -403,7 +399,6 @@ void listFiles(const String& command) {
     String path = currentPath;
     bool showAll = false;
 
-    // Parse command arguments
     int spaceIndex = command.indexOf(' ');
     if (spaceIndex != -1) {
         String args = command.substring(spaceIndex + 1);
@@ -417,7 +412,6 @@ void listFiles(const String& command) {
         }
     }
 
-    // Handle relative paths
     if (!path.startsWith("/")) {
         if (path.startsWith("./")) {
             path = currentPath + path.substring(2);
@@ -476,17 +470,228 @@ void changeDir(const String& command) {
     }
 
     tempPath.replace("//", "/");
-    // auto oldPrint = 
-    esp_log_set_vprintf(emptyPrint);
     if (!LittleFS.exists(tempPath)) {
-        // esp_log_set_vprintf(oldPrint);
         Serial.println("\rError: Directory does not exist");
     } else if (!LittleFS.open(tempPath).isDirectory()) {
-        // esp_log_set_vprintf(oldPrint);
         Serial.println("\rError: Not a directory");
     } else {
-        // esp_log_set_vprintf(oldPrint); 
         currentPath = tempPath;
         Serial.println("\rChanged directory to: " + tempPath);
     }
 }
+
+void touchFile(const String& command) {
+    String path = command.substring(6);
+    path.trim();
+    if (path.isEmpty()) {
+        Serial.println("\rNo file path provided. Use touch <filename> to create file");
+        return;
+    }
+
+    if (path.startsWith("/")) {
+        path = "/" + path;
+    } else if (path.startsWith("./")) {
+        path = currentPath + path;
+    } else {
+        path = currentPath + "/" + path;
+    }
+    path.replace("//", "/");
+
+    File file = LittleFS.open(path, "w");
+    if (!file) {
+        Serial.println("\rFailed to create file");
+    } else {
+        file.close();
+        Serial.println("\rFile created: " + path);
+    }
+}
+
+void logPin(const String& command) {
+    String args = command.substring(3);
+    args.trim();
+
+    bool analog = false;
+
+    if (args.startsWith("-a")) {
+        analog = true;
+        args = args.substring(2);
+        args.trim();
+    }
+
+    if (args.isEmpty()) {
+        Serial.println("No pin number provided. Use 'log [-a] <pin>' to log state of pin");
+        return;
+    }
+
+    int pinNum = args.toInt();
+    if (pinNum < 0 || pinNum > 39) {
+        Serial.println("\rInvalid pin number. Use 'log [-a] <pin>' to log state of pin");
+        return;
+    }
+
+    if (analog) {
+        int lastValue = -1;
+        Serial.println("\rLogging analog pin " + String(pinNum) + " state. Press Ctrl+C to stop.");
+        while (true) {
+            int value = analogRead(pinNum);
+            if (value != lastValue) {
+                Serial.println("\rAnalog Output: " + String(value));
+                lastValue = value;
+                sleep(1);
+            }
+            if (Serial.read() == 3) { // Ctrl+C to stop
+                break;
+            }
+        }
+    } else {
+        int last = -1;
+        Serial.println("\rLogging pin " + String(pinNum) + " state. Press Ctrl+C to stop.");
+        while (true) {
+            int r = digitalRead(pinNum);
+            if (r != last) {
+                Serial.println("\rOutput: " + String(r));
+                last = r;
+                sleep(1);
+            }
+            if (Serial.read() == 3) { // Ctrl+C to stop
+                break;
+            }
+        }
+    }
+    Serial.println("\rLogging stopped.");
+}
+
+void removeFile(const String& command) {
+    String path = command.substring(2);
+    path.trim();
+
+    bool recursive = false;
+    bool force = false;
+    if (path.startsWith("-r")) {
+        recursive = true;
+        path = path.substring(2);
+        path.trim();
+    } 
+    if (path.startsWith("-f")) {
+        force = true;
+        path = path.substring(2);
+        path.trim();
+    }
+
+    if (path.isEmpty()) {
+        Serial.println("\rNo file path provided. Use rm <filename> to remove file");
+        return;
+    }
+
+    if (path.startsWith("/")) {
+        path = path;
+    } else if (path.startsWith("./")) {
+        path = currentPath + path;
+    } else {
+        path = currentPath + "/" + path;
+    }
+    path.replace("//", "/");
+    if (!LittleFS.exists(path)) {
+        Serial.println("\rFile does not exist");
+    } else if (LittleFS.open(path).isDirectory()) {
+        if (!recursive && !force) {
+            Serial.println("\rError: File is a directory. Use -rf to remove directory.");
+        } else {
+            LittleFS.remove(path);
+            Serial.println("\rDirectory removed: " + path);
+        }
+    } else {
+        LittleFS.remove(path);
+        Serial.println("\rFile removed: " + path);
+    }
+}
+
+void moveFile(const String& command) {
+    int spaceIndex = command.indexOf(' ');
+    if (spaceIndex == -1) {
+        Serial.println("\rNo file path provided");
+        return;
+    }
+
+    String args = command.substring(spaceIndex + 1);
+    args.trim();
+
+    spaceIndex = args.indexOf(' ');
+    if (spaceIndex == -1) {
+        Serial.println("\rNo destination path provided");
+        return;
+    }
+
+    String srcPath = args.substring(0, spaceIndex);
+    String destPath = args.substring(spaceIndex + 1);
+    srcPath.trim();
+    destPath.trim();
+
+    if (srcPath.isEmpty() || destPath.isEmpty()) {
+        Serial.println("\rNo file path or destination path provided");
+        return;
+    }
+
+    if (!srcPath.startsWith("/")) {
+        srcPath = currentPath + "/" + srcPath;
+    }
+    if (!destPath.startsWith("/")) {
+        destPath = currentPath + "/" + destPath;
+    }
+    srcPath.replace("//", "/");
+    destPath.replace("//", "/");
+
+    if (!LittleFS.exists(srcPath)) {
+        Serial.println("\rSource file does not exist");
+        return;
+    }
+
+    if (LittleFS.exists(destPath)) {
+        Serial.println("\rDestination file already exists");
+        return;
+    }
+
+    if (LittleFS.rename(srcPath, destPath)) {
+        Serial.println("\rFile moved successfully");
+    } else {
+        Serial.println("\rError while moving file");
+    }
+}
+
+void catFile(const String& command) {
+    String path = command.substring(3);
+    path.trim();
+    // 666 stroka
+    if (path.isEmpty()) {
+        Serial.println("\rNo file path provided. Use 'cat <filename>' to display file content");
+        return;
+    }
+    if (path.startsWith("/")) {
+        path = path;
+    } else if (path.startsWith("./")) {
+        path = currentPath + path;
+    } else {
+        path = currentPath + "/" + path;
+    }
+    path.replace("//", "/");
+
+    File file = LittleFS.open(path,"r");
+    if (!file) {
+        Serial.println("\rFailed to open file");
+        return;
+    } else if (file.isDirectory()) {
+        Serial.println("\rError: File is a directory");
+        return;
+    } else {
+        if (file.size() == 0) {
+            Serial.println("\rFile is empty");
+            return;
+        }
+        Serial.println("\rFile content:");
+        while (file.available()) {
+            Serial.write(file.read());
+        }
+        file.close();
+    }
+}
+
