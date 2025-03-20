@@ -32,6 +32,14 @@ Command commandList[] = {
     int spaceIndex = cmd.indexOf(' ');
     if (spaceIndex != -1) {
       String filePath = cmd.substring(spaceIndex + 1);
+    if (filePath.startsWith("/")) {
+        filePath = filePath;
+    } else if (filePath.startsWith("./")) {
+        filePath = currentPath + filePath;
+    } else {
+        filePath = currentPath + "/" + filePath;
+    }
+      filePath.replace("//", "/");
       editor.begin(filePath);
       editor.run();
     } else {
@@ -39,7 +47,18 @@ Command commandList[] = {
     }
   }},
   {"ls", [](String cmd) { listFiles(cmd);}},
-  {"cd", [](String cmd) { changeDir(cmd);}} 
+  {"cd", [](String cmd) { changeDir(cmd);}},
+  {"touch", [](String cmd) {touchFile(cmd);}},
+  {"log", [](String cmd) { logPin(cmd); }},
+  {"rm", [](String cmd) { removeFile(cmd); }},
+  {"mv", [] (String cmd) { moveFile(cmd); }},
+  {"cat", [](String cmd) { catFile(cmd); }},
+  {"echo", [](String cmd) {
+    String text = cmd.substring(4);
+    text.trim();
+    Serial.println(text);
+  }},
+  {"mkdir", [](String cmd) { makeDir(cmd); }}
 };
 
 void setup() {
@@ -150,7 +169,7 @@ void processCommand() {
   command.trim();
 
   if (command.isEmpty()) {
-    Serial.println("Empty command.");
+    // Serial.println("Empty command.");
     return;
   }
 
@@ -165,5 +184,5 @@ void processCommand() {
     }
   }
 
-  Serial.println("Unknown command.");
+  Serial.println("Unknown command. Type \"help\" for more information.");
 }

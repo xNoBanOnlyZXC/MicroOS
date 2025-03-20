@@ -50,7 +50,16 @@ const helpCommand commands[] = {
     {"mx", "Small mx file editor"},
     {"neofetch", "System information"},
     {"ls", "List files in current directory"},
-    {"cd", "Change directory"} 
+    {"cd", "Change directory"},
+    {"touch", "Create new file"},
+    {"log", "Log pin state"},
+    {"rm", "Remove file"},
+    {"reboot", "Reboot ESP32"},
+    {"tcheck", "Check terminal size"},
+    {"mv", "Move file"},
+    {"cat", "Show file content"},
+    {"echo", "Print text to terminal"},
+    {"mkdir", "Create new directory"}
 };
 
 struct Command {
@@ -75,3 +84,9 @@ void pinWorker(const String& command);
 String progressBar(int used, int total, int width);
 void listFiles(const String& command);
 void changeDir(const String& command);
+void touchFile(const String& command);
+void logPin(const String& command);
+void removeFile(const String& command);
+void moveFile(const String& command);
+void catFile(const String& command);
+void makeDir(const String& command);
