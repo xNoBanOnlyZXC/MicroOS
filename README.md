@@ -1,6 +1,11 @@
-# MicroOS
-Small OS for ESP-like microcontroller.
-Made by **~$ sudo++**
+<div align="center">
+    <h1>MicroOS</h1>
+    Small OS for ESP-like microcontroller.
+    <p>Made by <bold>~$ sudo++</bold></p>
+    <img alt="code size" src="https://img.shields.io/github/languages/code-size/xnobanonlyzxc/microos?style=for-the-badge">
+    <img alt="repo stars" src="https://img.shields.io/github/stars/xnobanonlyzxc/microos?style=for-the-badge">
+    <img alt="repo stars" src="https://img.shields.io/github/commit-activity/w/xnobanonlyzxc/microos?style=for-the-badge">
+</div>
 
 ---
 ### How to initialize?
